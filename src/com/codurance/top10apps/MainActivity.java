@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -12,20 +13,44 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.ListView;
 
 
 public class MainActivity extends Activity {
 	
-	TextView textView;
+	Button btnParse;
+	ListView listApps;
+	String xmlData;
 	
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        textView = (TextView) findViewById(R.id.textView1);
+        btnParse = (Button) findViewById(R.id.btnParse);
+        listApps = (ListView) findViewById(R.id.listApps);
         
-        new DownloadData().execute("http://ax.itunes.apple.com/WebObjects/MZStoreServices.woa/ws/RSS/toppaidapplications/limit=10/xml");
+        btnParse.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				ParseApplications parse = new ParseApplications(xmlData);
+				boolean operationStatus = parse.process();
+				if(operationStatus) {
+					ArrayList<Application> allApps = parse.getApplications();
+					ArrayAdapter<Application> adapter = new ArrayAdapter<Application>(MainActivity.this, R.layout.list_item, allApps);
+					listApps.setVisibility(listApps.VISIBLE);
+					listApps.setAdapter(adapter);
+				} else {
+					Log.d("Main Activity", "Error parsing file");
+				}
+				
+			}
+		});
+        
+        new DownloadData().execute("https://itunes.apple.com/gb/rss/topalbums/limit=10/genre=21/xml");
     }
 
 
@@ -50,13 +75,13 @@ public class MainActivity extends Activity {
     
     private class DownloadData extends AsyncTask<String, Void, String> {
     	
-    	String myXMLData;
+    	String myXmlData;
     	
 		@Override
 		protected String doInBackground(String... urls) {
 			// TODO Auto-generated method stub
 			try {
-				myXMLData = downloadXML(urls[0]);
+				myXmlData = downloadXML(urls[0]);
 			} catch(IOException e) {
 				return "Unable to download XML file";
 			}
@@ -64,8 +89,8 @@ public class MainActivity extends Activity {
 		}
 		
 		protected void onPostExecute(String result) {
-			Log.d("OnPostExecute", myXMLData);
-			textView.setText(myXMLData);
+			Log.d("OnPostExecute", myXmlData);
+			xmlData = myXmlData;
 		}
     	
 		
